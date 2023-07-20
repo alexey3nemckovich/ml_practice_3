@@ -133,6 +133,15 @@ def pair_plot(data, target):
     sns.pairplot(data, hue=target);
 
 
+def get_basic_quality_metrics_(y_true, y_pred):
+    accuracy = accuracy_score(y_true, y_pred)
+    precision = precision_score(y_true, y_pred)
+    recall = recall_score(y_true, y_pred)
+    f1 = f1_score(y_true, y_pred)
+    
+    return accuracy, precision, recall, f1
+
+
 def get_basic_quality_metrics(y_true, y_pred, y_pred_proba):
     roc_auc = roc_auc_score(y_true, y_pred_proba[:, 1])
     accuracy = accuracy_score(y_true, y_pred)
@@ -141,6 +150,14 @@ def get_basic_quality_metrics(y_true, y_pred, y_pred_proba):
     f1 = f1_score(y_true, y_pred)
     
     return roc_auc, accuracy, precision, recall, f1
+
+
+def print_basic_quality_metrics_(y_true, y_pred):
+    accuracy, precision, recall, f1 = get_basic_quality_metrics_(y_true, y_pred)
+    
+    print("Accuracy:  {:.3f}\nPrecision: {:.3f}\nRecall:    {:.3f}\nF1-score:  {:.3f}".format(
+        accuracy, precision, recall, f1
+    ))
 
 
 def print_basic_quality_metrics(y_true, y_pred, y_pred_proba):
@@ -207,9 +224,9 @@ def plot_cumulative_explained_variance_ratio(explained_variance_ratio, algo_name
 
 def corr_feature_detect(data, threshold=0.8):
     corrmat = data.corr()
-    corrmat = corrmat.abs().unstack()
+    corrmat = corrmat.unstack()
     corrmat = corrmat.sort_values(ascending=False)
-    corrmat = corrmat[corrmat >= threshold]
+    corrmat = corrmat[(corrmat >= threshold) | (corrmat <=-threshold)]
     corrmat = corrmat[corrmat < 1]
     corrmat = pd.DataFrame(corrmat).reset_index()
     corrmat.columns = ['feature1', 'feature2', 'corr']
