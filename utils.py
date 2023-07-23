@@ -103,11 +103,17 @@ def std_scale_numerical_values(data):
 
 
 def plot_confusion_matrix(y_true, y_pred):
-    cm = confusion_matrix(y_true, y_pred)
+    conf_matrix = build_confusion_matrix(y_true, y_pred)
 
-    conf_matrix = pd.DataFrame(data = cm, columns = ['Predicted:0','Predicted:1'], index=['Actual:0','Actual:1'])
     plt.figure(figsize = (5,5))
     sns.heatmap(conf_matrix, annot=True,fmt='d',cmap="YlGnBu", cbar=False);
+    return plt
+
+
+def build_confusion_matrix(y_true, y_pred):
+    cm = confusion_matrix(y_true, y_pred)
+
+    return pd.DataFrame(data = cm, columns = ['Predicted:0','Predicted:1'], index=['Actual:0','Actual:1'])
 
 
 def plot_roc_curve(y_true, y_pred_proba):
@@ -117,10 +123,28 @@ def plot_roc_curve(y_true, y_pred_proba):
     plt.plot(fpr, tpr, label='ROC curve ')
     plt.plot([0, 1], [0, 1])
     plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
+    plt.ylim([0.0, 1.0])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.title('ROC AUC: {:.3f}'.format(auc_score))
+    plt.show()
+
+
+def plot_roc_curves(models, x_test, y_test, figsize):
+    plt.figure(figsize=figsize)
+
+    for model in models:
+        y_pred_prob = model.predict_proba(x_test)[:, 1]
+        roc_auc = roc_auc_score(y_test, y_pred_prob)
+        fpr, tpr, _ = roc_curve(y_test, y_pred_prob)
+        plt.plot(fpr, tpr, label=f'{model.__class__.__name__} (AUC = {roc_auc:.2f})')
+
+    plt.plot([0, 1], [0, 1], 'k--', label='Random')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curve for Different Models')
+    plt.legend(loc='lower right')
+
     plt.show()
 
 
@@ -166,6 +190,28 @@ def print_basic_quality_metrics(y_true, y_pred, y_pred_proba):
     print("ROC AUC:   {:.3f}\nAccuracy:  {:.3f}\nPrecision: {:.3f}\nRecall:    {:.3f}\nF1-score:  {:.3f}".format(
         roc_auc, accuracy, precision, recall, f1
     ))
+
+
+def print_metrics_table(metrics, rows_names=None):
+    df = pd.DataFrame(data=metrics, columns=['ROC AUC', 'Accuracy', 'Precision', 'Recall', 'F1-score'], index=rows_names)
+    print(df)
+
+
+def render_plots_table(plots, num_cols_to_display, figsize=None, plots_names=None):
+    num_rows = (len(plots) - 1) // num_cols_to_display + 1
+
+    fig, axes = plt.subplots(num_rows, num_cols_to_display, figsize=figsize)
+
+    axes = axes.flatten()
+
+    for i, plot in enumerate(plots):
+        row = i % num_rows
+        col = i % num_cols_to_display
+        axes[i].imshow(plot)
+        axes[i].set_title(plots_names[i])
+
+    plt.tight_layout()
+    plt.show()
 
 
 def basic_model_test(model, X_train, X_test, y_train, y_test):
@@ -299,3 +345,34 @@ def save_pyobj_to_file(pyobj, file_path):
 
 def load_pyobj_from_file(file_path):
     return joblib.load(file_path)
+
+
+def plot_features_distributions(data, columns_to_plot, num_cols_to_display):
+    num_rows = (len(columns_to_plot) - 1) // num_cols_to_display + 1
+
+    fig, axes = plt.subplots(num_rows, num_cols_to_display, figsize=(25, 20))
+
+    axes = axes.flatten()
+
+    for i, col in enumerate(columns_to_plot):
+        sns.histplot(data=data, x=col, kde=True, ax=axes[i])
+        axes[i].set_title(f"Histogram for {col}")
+        axes[i].set_xlabel(col)
+
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_conf_matrix_table(conf_matrices, num_cols, figsize, titles):
+    num_rows = (len(conf_matrices) - 1) // num_cols + 1
+
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=figsize)
+
+    for i, conf_matrix in enumerate(conf_matrices):
+        ax = axes[i] if num_cols > 1 else axes
+        sns.heatmap(conf_matrix, annot=True, fmt='d', cmap="YlGnBu", cbar=False, ax=ax)
+        ax.set_title(titles[i])
+
+    plt.tight_layout()
+    plt.show()
+
